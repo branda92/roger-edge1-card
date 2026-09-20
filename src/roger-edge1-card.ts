@@ -99,7 +99,7 @@ export class RogerEdge1Card extends LitElement {
   }
   private async _press(action: ControlName) {
     const hass = this.hass;
-    const status = computeGateStatus(hass, this._entities);
+    const status = computeGateStatus(hass, this._entities, this._config?.pedestrian_position);
     if (!hass || this._pending.has(action) || !computeAvailableActions(hass, this._entities, status)[action]) return;
     const id = this._entities[BUTTON_KEYS[action]];
     if (!id) return;
@@ -171,12 +171,18 @@ export class RogerEdge1Card extends LitElement {
       </button>`)}
     </div></div>`;
   }
+  private _photocellIcon() {
+    return html`<svg class="photocell-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+      fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <path d="M3 7v10M21 7v10"></path><path d="M7 12h10" stroke-dasharray="2 3"></path>
+    </svg>`;
+  }
   private _photocells(status: GateStatus) {
     return html`<div class="photocells" aria-label="Fotocellule">
       ${([1, 2] as const).map(n => {
         const value = n === 1 ? status.ft1 : status.ft2;
         return html`<div class=${`photocell ${value === true ? "blocked" : value === false ? "clear" : "unknown"}`} data-ft=${n}>
-          <ha-icon icon="mdi:laser"></ha-icon><span>FT${n}</span><strong>${value === true ? "Oscurata" : value === false ? "Libera" : "Non disponibile"}</strong>
+          ${this._photocellIcon()}<span class="photocell-text"><span>FT${n}</span> <strong>${value === true ? "Oscurata" : value === false ? "Libera" : "Non disponibile"}</strong></span>
         </div>`;
       })}
     </div>`;
@@ -199,20 +205,20 @@ export class RogerEdge1Card extends LitElement {
   }
   protected render() {
     if (!this._config) return nothing;
-    const status = computeGateStatus(this.hass, this._entities);
+    const status = computeGateStatus(this.hass, this._entities, this._config.pedestrian_position);
     const ui = this._ui;
     const style = `--roger-card-padding:${ui.padding.card};--roger-visual-padding:${ui.padding.visual};--roger-controls-top:${ui.padding.controls_top};--roger-header-bottom:${ui.padding.header_bottom};--roger-content-gap:${ui.padding.content_gap}`;
     const ftWarning = status.ft1 && status.ft2 ? "FT1 e FT2 oscurate" : status.ft1 ? "FT1 oscurata" : status.ft2 ? "FT2 oscurata" : "";
     return html`<ha-card><div class="wrapper" style=${style}>
       ${ui.header.enabled ? html`<div class="header-row"><div class="header-main"><div class="header-title">${ui.header.title}</div>
-        ${ui.header.show_state || ui.header.show_position ? html`<div class="header-meta">${ui.header.show_state ? status.label : ""}${ui.header.show_state && ui.header.show_position ? " · " : ""}${ui.header.show_position ? this._percent(status.position) : ""}</div>` : nothing}
+        ${ui.header.show_state || ui.header.show_position ? html`<div class="header-meta">${ui.header.show_state ? status.label : ""}${ui.header.show_state && ui.header.show_position ? " · " : ""}${ui.header.show_position ? this._percent(status.displayPosition) : ""}</div>` : nothing}
       </div>${this._settingsButton("header")}</div>` : nothing}
-      ${ui.view_mode === "text" ? html`<div class="text-panel"><div class="text-panel-main">${status.label} · ${this._percent(status.position)}</div>${this._settingsButton("graphic")}</div>` : html`
+      ${ui.view_mode === "text" ? html`<div class="text-panel"><div class="text-panel-main">${status.label} · ${this._percent(status.displayPosition)}</div>${this._settingsButton("graphic")}</div>` : html`
         <div class="visual-box">${renderGateSvg(status, this._config.motor1_side ?? "left")}
-          ${ftWarning ? html`<div class="overlay-badges"><div class="flag warn"><ha-icon icon="mdi:laser"></ha-icon>${ftWarning}</div></div>` : nothing}
+          ${ftWarning ? html`<div class="overlay-badges"><div class="flag warn">${this._photocellIcon()}${ftWarning}</div></div>` : nothing}
           ${this._settingsButton("graphic")}
         </div>
-        <div class="meta-row" role="status"><span class=${`connection-dot ${status.online === true ? "connected" : "disconnected"}`}></span><span class="meta-state">${status.label}</span><span class="meta-separator">·</span><span class="meta-position">${this._percent(status.position)}</span></div>`}
+        <div class="meta-row" role="status"><span class=${`connection-dot ${status.online === true ? "connected" : "disconnected"}`}></span><span class="meta-state">${status.label}</span><span class="meta-separator">·</span><span class="meta-position">${this._percent(status.displayPosition)}</span></div>`}
       ${ui.view_mode !== "graphic" ? this._leafDetails(status) : nothing}
       ${this._photocells(status)}
       ${this._controls(status)}

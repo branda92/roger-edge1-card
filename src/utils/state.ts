@@ -1,4 +1,4 @@
-import type { AvailableActions, EntityMap, GateStatus, HomeAssistant } from "../types";
+import type { AvailableActions, EntityMap, GateStatus, HomeAssistant, PedestrianPositionConfig } from "../types";
 
 const STATE_NAMES = ["Sconosciuto", "Apertura", "Stop durante apertura", "Chiusura", "Stop durante chiusura",
   "Aperta", "Chiusa", "Sbloccata", "Posizione sconosciuta", "Apertura (pos. sconosciuta)",
@@ -27,7 +27,7 @@ function stateCode(hass: HomeAssistant | undefined, id?: string, textId?: string
   return index < 0 ? null : index;
 }
 
-export function computeGateStatus(hass: HomeAssistant | undefined, e: EntityMap): GateStatus {
+export function computeGateStatus(hass: HomeAssistant | undefined, e: EntityMap, pedestrian?: PedestrianPositionConfig): GateStatus {
   const connected = !!hass && hass.connected !== false;
   const online = connected ? binary(hass, e.online) : false;
   const c1 = stateCode(hass, e.state_code_1, e.state_1);
@@ -42,12 +42,26 @@ export function computeGateStatus(hass: HomeAssistant | undefined, e: EntityMap)
   const p1 = online === true ? position(hass, e.position_1) : null;
   const p2 = online === true ? position(hass, e.position_2) : null;
   const total = online === true ? position(hass, e.position) ?? (p1 !== null && p2 !== null ? (p1 + p2) / 2 : null) : null;
+  const motor2 = pedestrian?.motor === 2;
+  const pedestrianPosition = motor2 ? p2 : p1;
+  const otherPosition = motor2 ? p1 : p2;
+  const pedestrianCode = motor2 ? c2 : c1;
+  const otherCode = motor2 ? c1 : c2;
+  const tolerance = pedestrian?.tolerance ?? 1;
+  // Recognize a configured stationary position, never the cause of the movement.
+  const atPedestrianPosition = !!pedestrian && online === true && !moving
+    && pedestrianCode !== null && [2, 4, 5].includes(pedestrianCode) && otherCode === 6
+    && pedestrianPosition !== null && otherPosition !== null
+    && pedestrianPosition > 0 && pedestrianPosition < 100
+    && Math.abs(pedestrianPosition - pedestrian.position) <= tolerance
+    && otherPosition <= tolerance;
   let label = "Stato non disponibile";
   if (online === false) label = "Centralina non collegata";
   else if (online === true) {
     if (opening && closing) label = "Movimento ante";
     else if (opening) label = "In apertura";
     else if (closing) label = "In chiusura";
+    else if (atPedestrianPosition) label = "Posizione pedonale";
     else if (stopped) label = "Fermo";
     else if (fullyClosed) label = "Chiuso";
     else if (fullyOpened) label = "Aperto";
@@ -60,7 +74,8 @@ export function computeGateStatus(hass: HomeAssistant | undefined, e: EntityMap)
   // Never replace an unknown configured binary sensor with potentially stale raw data.
   const ft = (id: string | undefined, mask: number) => !connected ? null : id
     ? binary(hass, id) : validRaw ? ((raw! & mask) !== 0) : null;
-  return { position: total, motor1Position: p1, motor2Position: p2,
+  return { position: total, displayPosition: atPedestrianPosition ? pedestrianPosition : total,
+    atPedestrianPosition, motor1Position: p1, motor2Position: p2,
     state1: online === true && c1 !== null ? STATE_NAMES[c1] : "Non disponibile",
     state2: online === true && c2 !== null ? STATE_NAMES[c2] : "Non disponibile",
     label, opening, closing, moving, fullyClosed, fullyOpened, stopped, online,

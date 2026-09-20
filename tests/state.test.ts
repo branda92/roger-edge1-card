@@ -91,3 +91,54 @@ test('configuration rejects wrong command domain, invalid view and missing mappi
   assert.throws(() => validateConfig({ type: 'test', device_id: 'mine', settings_path: '//example.org' }));
   assert.doesNotThrow(() => validateConfig({ type: 'test', device_id: 'mine' }));
 });
+
+test('configured pedestrian position shows the measured leaf percentage and preserves the total', () => {
+  for (const state_code_1 of ['2','4','5']) {
+    const h=hass({position_1:'40',position_2:'0',position:'20',state_code_1});
+    const s=computeGateStatus(h,entities,{position:40});
+    assert.equal(s.label,'Posizione pedonale');
+    assert.equal(s.atPedestrianPosition,true);
+    assert.equal(s.displayPosition,40);
+    assert.equal(s.position,20);
+    assert.equal(s.motor1Position,40);
+    assert.equal(s.motor2Position,0);
+  }
+  const unconfigured=computeGateStatus(hass({position_1:'40',position:'20',state_code_1:'5'}),entities);
+  assert.equal(unconfigured.label,'Apertura parziale');
+  assert.equal(unconfigured.displayPosition,20);
+  assert.equal(unconfigured.atPedestrianPosition,false);
+});
+
+test('moving, unlocked, unknown, unavailable or mismatching leaves are never labeled pedestrian', () => {
+  const base={position_1:'40',position_2:'0',position:'20',state_code_1:'5'};
+  for (const override of [
+    ...['0','1','3','6','7','8','9','10','11','12','13','14','15','unknown','unavailable'].map(state_code_1=>({state_code_1,state_1:'unknown'})),
+    {state_code_2:'1'}, {state_code_2:'5'}, {state_code_2:'13'},
+    {position_1:'unknown'}, {position_2:'unavailable'}, {position_1:'0'}, {position_1:'100'},
+    {position_1:'50'}, {position_2:'20'}, {online:'off'},
+  ]) {
+    const s=computeGateStatus(hass({...base,...override}),entities,{position:40});
+    assert.equal(s.atPedestrianPosition,false,JSON.stringify(override));
+    assert.notEqual(s.label,'Posizione pedonale');
+  }
+  const disconnected=hass(base);disconnected.connected=false;
+  assert.equal(computeGateStatus(disconnected,entities,{position:40}).atPedestrianPosition,false);
+});
+
+test('pedestrian motor and tolerance are configurable without forcing a fixed percentage', () => {
+  const h=hass({position_1:'0',position_2:'39.5',position:'19.75',state_code_1:'6',state_code_2:'5'});
+  const s=computeGateStatus(h,entities,{motor:2,position:40,tolerance:1});
+  assert.equal(s.atPedestrianPosition,true);
+  assert.equal(s.displayPosition,39.5);
+  assert.equal(s.position,19.75);
+  assert.equal(computeGateStatus(h,entities,{motor:1,position:40}).atPedestrianPosition,false);
+  assert.equal(computeGateStatus(h,entities,{motor:2,position:40,tolerance:0}).atPedestrianPosition,false);
+});
+
+test('pedestrian configuration rejects invalid targets, motors and tolerance', () => {
+  for (const option of [null,true,[],{position:0},{position:100},{position:NaN},{position:'40'},
+    {position:40,motor:3},{position:40,motor:'1'},{position:40,tolerance:-1},{position:40,tolerance:6}]) {
+    assert.throws(()=>validateConfig({type:'test',device_id:'mine',pedestrian_position:option as any}));
+  }
+  assert.doesNotThrow(()=>validateConfig({type:'test',device_id:'mine',pedestrian_position:{motor:2,position:40,tolerance:0}}));
+});

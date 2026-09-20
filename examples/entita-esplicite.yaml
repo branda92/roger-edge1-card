@@ -4,6 +4,11 @@
 type: custom:roger-edge1-card
 device_id: INSERISCI_ID_DISPOSITIVO
 motor1_side: left
+# Opzionale: adatta la posizione al tuo cancello o rimuovi questo blocco.
+pedestrian_position:
+  motor: 1
+  position: 40
+  tolerance: 1
 entities:
   cover: cover.centralina_cancello_cancello
   position: sensor.centralina_cancello_posizione_cancello

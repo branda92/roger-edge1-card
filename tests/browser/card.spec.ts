@@ -73,3 +73,59 @@ test('narrow layout and light theme do not overflow',async({page})=>{
   const overflow=await page.locator('#main-card').evaluate(el=>{const root=el.shadowRoot!;return [...root.querySelectorAll('.wrapper,.controls,.photocells')].some(n=>n.scrollWidth>n.clientWidth+1);});
   expect(overflow).toBe(false);
 });
+
+test('photocell text stays centered in both badges with visible local icons', async ({page}) => {
+  for (const width of [280, 375, 500]) {
+    await page.locator('#main-card').evaluate((el, value) => el.style.width = `${value}px`, width);
+    for (const values of [{ft1:'off',ft2:'off'},{ft1:'on',ft2:'unknown'}]) {
+      await page.evaluate(v => window['applyScenario']('closed',v), values);
+      await expect(page.locator('#main-card [data-ft="2"] strong')).toHaveText(values.ft2==='off' ? 'Libera' : 'Non disponibile');
+      const bounds = await page.locator('#main-card .photocell').evaluateAll(badges => badges.map(badge => {
+        const outer=badge.getBoundingClientRect();
+        const text=badge.querySelector('.photocell-text')!.getBoundingClientRect();
+        const icon=badge.querySelector('svg')!.getBoundingClientRect();
+        return {offset:Math.abs((text.left+text.right-outer.left-outer.right)/2), iconWidth:icon.width, overflow:badge.scrollWidth>badge.clientWidth+1};
+      }));
+      for (const bound of bounds) {
+        expect(bound.offset).toBeLessThanOrEqual(1);
+        expect(bound.iconWidth).toBe(16);
+        expect(bound.overflow).toBe(false);
+      }
+    }
+  }
+});
+
+test('pedestrian summary uses 40 percent for the leaf while both leaf details remain accurate', async ({page}) => {
+  await page.evaluate(()=>{
+    window['setCardConfig']({pedestrian_position:{motor:1,position:40},ui:{header:{show_state:true,show_position:true}}});
+    window['applyScenario']('pedestrian');
+  });
+  const card=page.locator('#main-card');
+  await expect(card.locator('.meta-state')).toHaveText('Posizione pedonale');
+  await expect(card.locator('.meta-position')).toHaveText('40%');
+  await expect(card.locator('.header-meta')).toHaveText('Posizione pedonale · 40%');
+  await expect(card.locator('.leaf-details > div').nth(0)).toContainText('40%');
+  await expect(card.locator('.leaf-details > div').nth(1)).toContainText('0%');
+  await page.evaluate(()=>window['applyScenario']('pedestrian',{state_code_1:'1'}));
+  await expect(card.locator('.meta-state')).toHaveText('In apertura');
+  await expect(card.locator('.meta-position')).toHaveText('20%');
+  await page.evaluate(()=>{
+    window['setCardConfig']({pedestrian_position:{position:40},ui:{view_mode:'text'}});
+    window['applyScenario']('pedestrian');
+  });
+  await expect(card.locator('.text-panel-main')).toHaveText('Posizione pedonale · 40%');
+});
+
+test('pedestrian recognition is opt-in and pressing the command never changes the reported state', async ({page}) => {
+  await page.evaluate(()=>window['setCardConfig']({pedestrian_position:{position:40}}));
+  const card=page.locator('#main-card');
+  await card.getByRole('button',{name:'Pedonale',exact:true}).click();
+  await expect(card.locator('.meta-state')).toHaveText('Chiuso');
+  await expect(card.locator('.meta-position')).toHaveText('0%');
+  await page.evaluate(()=>{
+    window['setCardConfig']({pedestrian_position:undefined});
+    window['applyScenario']('pedestrian');
+  });
+  await expect(card.locator('.meta-state')).toHaveText('Apertura parziale');
+  await expect(card.locator('.meta-position')).toHaveText('20%');
+});

@@ -30,6 +30,13 @@ export function validateConfig(config: RogerEdge1CardConfig): void {
   if (config.device_id && !/^[a-zA-Z0-9_-]+$/.test(config.device_id)) throw new Error("device_id non valido.");
   if (config.motor1_side && !["left", "right"].includes(config.motor1_side)) throw new Error("motor1_side: usa left o right.");
   if (config.ui?.view_mode && !["graphic", "text", "hybrid"].includes(config.ui.view_mode)) throw new Error("ui.view_mode: usa graphic, text o hybrid.");
+  const pedestrian = config.pedestrian_position;
+  if (pedestrian !== undefined) {
+    if (!pedestrian || typeof pedestrian !== "object" || Array.isArray(pedestrian)) throw new Error("pedestrian_position: indica position e, se necessario, motor e tolerance.");
+    if (pedestrian.motor !== undefined && ![1, 2].includes(pedestrian.motor)) throw new Error("pedestrian_position.motor: usa 1 o 2.");
+    if (!Number.isFinite(pedestrian.position) || pedestrian.position <= 0 || pedestrian.position >= 100) throw new Error("pedestrian_position.position: indica una percentuale maggiore di 0 e minore di 100.");
+    if (pedestrian.tolerance !== undefined && (!Number.isFinite(pedestrian.tolerance) || pedestrian.tolerance < 0 || pedestrian.tolerance > 5)) throw new Error("pedestrian_position.tolerance: indica un valore tra 0 e 5 punti percentuali.");
+  }
   for (const [key, id] of Object.entries(config.entities ?? {})) {
     const definition = ENTITY_DEFINITIONS[key as EntityKey];
     if (!definition || typeof id !== "string" || !new RegExp(`^${definition.domain}\\.[a-z0-9_]+$`).test(id)) {

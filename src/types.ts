@@ -5,6 +5,11 @@ export type SettingsButtonPosition = "header" | "graphic" | "none";
 export type ActiveEffect = "none" | "pulse" | "blink" | "glow";
 export type ControlName = "open" | "stop" | "close" | "pedestrian";
 export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
+export interface PedestrianPositionConfig {
+  motor?: 1 | 2;
+  position: number;
+  tolerance?: number;
+}
 export interface RogerEdge1CardConfig {
   type: string;
   device_id?: string;
@@ -14,6 +19,7 @@ export interface RogerEdge1CardConfig {
   settings_path?: string;
   settings_entity?: string;
   entities?: Partial<GateEntities>;
+  pedestrian_position?: PedestrianPositionConfig;
   ui?: DeepPartial<CardUiConfig>;
 }
 export interface GateEntities {
@@ -58,6 +64,8 @@ export interface HomeAssistant {
 }
 export interface GateStatus {
   position: number | null;
+  displayPosition: number | null;
+  atPedestrianPosition: boolean;
   motor1Position: number | null;
   motor2Position: number | null;
   state1: string;

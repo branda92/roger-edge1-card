@@ -348,8 +348,9 @@ export const cardStyles = css`
   .leaf-details strong { font-size: 13px; }
   .leaf-details small { grid-column: 1 / -1; font-size: 11px; line-height: 1.4; }
   .photocells { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin: 2px 0 8px; }
-  .photocell { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; padding: 8px 5px; border-radius: 9px; background: var(--secondary-background-color); font-size: 11px; }
-  .photocell ha-icon, .flag ha-icon { --mdc-icon-size: 16px; width: 16px; height: 16px; }
+  .photocell { display: grid; grid-template-columns: 16px minmax(0,1fr) 16px; align-items: center; gap: 5px; min-width: 0; padding: 8px 5px; border-radius: 9px; background: var(--secondary-background-color); font-size: 11px; text-align: center; }
+  .photocell-icon { display: block; width: 16px; height: 16px; flex-shrink: 0; }
+  .photocell-text { grid-column: 2; justify-self: center; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px 4px; min-width: 0; max-width: 100%; line-height: 1.4; }
   .photocell strong { font-weight: 500; }
   .photocell.clear { color: var(--success-color, #42b883); background: color-mix(in srgb, var(--success-color, #42b883) 9%, var(--card-background-color)); }
   .photocell.blocked { color: var(--warning-color, #ff9800); background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, var(--card-background-color)); }

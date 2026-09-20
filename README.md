@@ -1,4 +1,4 @@
-# Roger EDGE1 Card 1.0.0
+# Roger EDGE1 Card 1.1.0
 
 Card per Home Assistant dedicata alle centraline **Roger Technology EDGE1** e al componente ESPHome [esphome-roger-edge1](https://github.com/branda92/esphome-roger-edge1) v0.3.0. Derivata da [CB19 ESPHome Card di Zoltán Szőke](https://github.com/szokezoltan95/CB19-esphome-card), licenza MIT; riferimento `0e4505aa464b7efa0c71c459b80dbd4bb4f23415`.
 
@@ -8,7 +8,7 @@ La grafica a due ante e le opzioni di stile provengono dal progetto originale. L
 
 ![Card con entrambe le fotocellule oscurate](preview/card-ft1-ft2.png)
 
-L’anteprima usa dati simulati. Sono disponibili anche [tema chiaro](preview/card-chiaro.png), [apertura parziale](preview/card-parziale.png) e [vista mobile](preview/mobile-chiaro.png).
+Le anteprime della versione 1.1.0 usano dati simulati. Vedi anche la [posizione pedonale al 40%](preview/card-parziale.png).
 
 ## Installazione con HACS
 
@@ -25,7 +25,7 @@ Riferimenti ufficiali: [repository personalizzati HACS](https://hacs.xyz/docs/fa
 
 1. Scarica **`roger-edge1-card.js`** dalla [release](https://github.com/branda92/roger-edge1-card/releases/latest), oppure usa [`dist/roger-edge1-card.js`](dist/roger-edge1-card.js), e copialo in **`/config/www/roger-edge1-card.js`** su Home Assistant. Il bundle include i testi delle licenze e le attribuzioni. Se crei `www` per la prima volta, riavvia Home Assistant.
 2. Apri **Impostazioni → Dashboard → ⋮ → Risorse** (attiva la modalità avanzata nel tuo profilo se necessario). Aggiungi:
-   - URL: `/local/roger-edge1-card.js?v=1.0.0`
+   - URL: `/local/roger-edge1-card.js?v=1.1.0`
    - Tipo: **Modulo JavaScript**.
 3. Ricarica la pagina o l'app Home Assistant.
 4. Modifica la dashboard, aggiungi una **card Manuale** e incolla il contenuto di [`examples/centralina-cancello.yaml`](examples/centralina-cancello.yaml).
@@ -49,7 +49,7 @@ La risorsa si registra anche in dashboard YAML con:
 ```yaml
 lovelace:
   resources:
-    - url: /local/roger-edge1-card.js?v=1.0.0
+    - url: /local/roger-edge1-card.js?v=1.1.0
       type: module
 ```
 
@@ -81,9 +81,30 @@ La mappa completa è illustrata in [`examples/entita-esplicite.yaml`](examples/e
 - Un sensore configurato con valore `unknown`/`unavailable` viene mostrato come **Non disponibile**, senza sostituirlo con un vecchio valore raw.
 - Il segnale **EDGE1 Collegata** determina l'attualità della telemetria del cancello. Quando è spento, le posizioni precedenti vengono nascoste e i movimenti sono disabilitati; Stop resta disponibile se ESPHome è raggiungibile. Se cade la connessione HA, tutti i comandi sono disabilitati.
 - Le fotocellule mostrano i loro stati indipendenti: la gestione delle sicurezze resta nella centralina.
-- **Pedonale è un comando, non uno stato dedicato confermato dal protocollo**. La posizione effettiva, ad esempio 40% su Anta 1 e 0% su Anta 2, viene rappresentata così com'è; la card non attribuisce automaticamente l'etichetta «Pedonale aperto» a qualsiasi apertura parziale.
+- **Pedonale è un comando, non uno stato dedicato confermato dal protocollo**. Puoi configurare il riconoscimento della posizione pedonale come descritto sotto: l’etichetta indica una posizione delle ante, non quale comando l’abbia prodotta.
 - Nessun cursore di posizione, poiché il protocollo implementato non dispone del comando di destinazione percentuale.
 - L'ingranaggio apre la pagina del tuo dispositivo, dove è già disponibile Parametro 80. La card non ne cambia il valore né gli attribuisce funzioni non confermate.
+
+## Posizione pedonale
+
+Il sensore **Posizione Cancello** esprime la posizione complessiva: con Anta 1 al 40% e Anta 2 allo 0%, normalmente vale 20%. Le due percentuali hanno quindi riferimenti diversi.
+
+Per mostrare **«Posizione pedonale · 40%»** quando la tua anta pedonale è nella posizione prevista, aggiungi alla configurazione della card:
+
+```yaml
+pedestrian_position:
+  motor: 1
+  position: 40
+  tolerance: 1
+```
+
+- `motor`: anta pedonale, `1` o `2` (predefinito: `1`). È il numero del motore, indipendente da `motor1_side`.
+- `position`: apertura pedonale configurata, maggiore di 0 e minore di 100. Il valore 40 è un esempio da adattare alla propria installazione.
+- `tolerance`: scostamento ammesso in punti percentuali, da 0 a 5 (predefinito: 1); usato anche per verificare che l’altra anta sia vicina allo 0%.
+
+L’etichetta compare solo con la centralina collegata, posizioni note, anta pedonale ferma (aperta o arrestata) e altra anta indicata come chiusa. Durante il movimento o con dati sconosciuti rimangono gli stati ordinari. Anche un arresto manuale nella stessa posizione può corrispondere a «Posizione pedonale».
+
+In questa condizione il riepilogo mostra la percentuale **misurata dell’anta pedonale**, arrotondata come le altre percentuali; non forza una lettura diversa dal sensore. I dettagli delle due ante e il sensore complessivo di Home Assistant conservano i propri valori. Senza il blocco `pedestrian_position`, rimane il riepilogo complessivo precedente.
 
 ## Aspetto
 
