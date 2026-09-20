@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Roger EDGE1 · Anteprima card</title>
+<style>
+:root { color-scheme: dark; --primary-text-color:#e8eaed; --secondary-text-color:#9a9da6; --primary-color:#03a9f4; --card-background-color:#1c1c1c; --secondary-background-color:#282828; --warning-color:#ffb74d; --error-color:#ef5350; --success-color:#61c393; }
+* { box-sizing:border-box; } body { margin:0; background:#111315; color:var(--primary-text-color); font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+main { max-width:1100px; padding:48px 28px; margin:auto; } .eyebrow { color:#61c393; letter-spacing:2px; font-size:11px; font-weight:600; } h1 { font-size:30px; margin:12px 0; font-weight:600; letter-spacing:-.8px; } p { color:#9a9da6; line-height:1.6; margin:0 0 28px; }
+.grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:start; } h2 { margin:0 0 12px; font-size:12px; color:#9a9da6; font-weight:500; letter-spacing:.3px; }
+ha-card { background:var(--card-background-color); color:var(--primary-text-color); border:1px solid #333; box-shadow:0 6px 16px #0002; }
+.toolbar { display:flex; align-items:center; gap:10px; margin:16px 0; flex-wrap:wrap; color:#9a9da6; font-size:12px; } select, .theme { font:inherit; border:1px solid #444; border-radius:8px; padding:9px; background:var(--card-background-color); color:var(--primary-text-color); } .theme { cursor:pointer; }
+#event-log { font-family:ui-monospace,monospace; font-size:11px; overflow-wrap:anywhere; min-height:18px; line-height:1.5; color:#9a9da6; } footer { font-size:12px; margin-top:26px; color:#777e86; line-height:1.6; }
+body.light { color-scheme:light; background:#f3f5f7; --primary-text-color:#252931; --secondary-text-color:#626977; --card-background-color:#fff; --secondary-background-color:#f0f2f5; --success-color:#21865c; --warning-color:#a35a00; }
+body.light ha-card { border-color:#ddd; }
+@media(max-width:850px) { .grid { grid-template-columns:1fr; max-width:420px; margin:auto; gap:26px; } main { max-width:480px; padding:28px 16px; } h1 { font-size:26px; } }
+</style></head><body><main><div class="eyebrow">ROGER EDGE1 · DATI SIMULATI</div><h1>Centralina Cancello</h1><p>La grafica della CB19, collegata agli stati del tuo componente ESPHome.</p>
+<div class="grid"><section><h2>ANTEPRIMA INTERATTIVA</h2><roger-edge1-card id="main-card"></roger-edge1-card><div class="toolbar"><label for="scenario">Scenario</label><select id="scenario"><option value="closed">Chiuso</option><option value="opening">In apertura</option><option value="closing">In chiusura</option><option value="opened">Aperto</option><option value="pedestrian">Una sola anta</option><option value="both">FT1 + FT2 oscurate</option><option value="unknown">Posizione sconosciuta</option><option value="offline">Centralina scollegata</option></select><button class="theme" id="theme">Tema chiaro</button></div><div id="event-log" role="status">I pulsanti registrano solo comandi simulati.</div></section>
+<section><h2>APERTURA PARZIALE · 40% / 0%</h2><roger-edge1-card id="partial-card"></roger-edge1-card></section>
+<section><h2>FOTOCELLULE · 0x0030</h2><roger-edge1-card id="ft-card"></roger-edge1-card></section></div>
+<footer>Anteprima locale: nessuna connessione a Home Assistant o al cancello. Posizioni e fotocellule sono simulate.<br>Grafica derivata da CB19 ESPHome Card di Zoltán Szőke · licenza MIT.</footer></main>
+<script type="module">
+import '../dist/roger-edge1-card.js';
+customElements.define('ha-card',class extends HTMLElement { constructor(){super();const root=this.attachShadow({mode:'open'});root.innerHTML='<style>:host{display:block;background:var(--card-background-color);color:var(--primary-text-color);border:1px solid color-mix(in srgb,var(--primary-text-color) 12%,transparent);box-shadow:0 4px 16px #0001}</style><slot></slot>';} });
+const icons={
+ 'mdi:arrow-expand-horizontal':'<path d="M8 6 2 12l6 6M2 12h20m-6-6 6 6-6 6"/>',
+ 'mdi:arrow-collapse-horizontal':'<path d="m2 6 6 6-6 6m20-12-6 6 6 6M1 12h7m8 0h7"/>',
+ 'mdi:stop':'<rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor" stroke="none"/>',
+ 'mdi:walk':'<circle cx="14" cy="4" r="2" fill="currentColor" stroke="none"/><path d="m9 20 3-7 2 3v5m-2-8 1-6-4 3v4m4-7 3 5h3"/>',
+ 'mdi:cog':'<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
+ 'mdi:laser':'<path d="M3 9v6m18-6v6M6 12h12" stroke-dasharray="3 2"/>',
+};
+customElements.define('ha-icon',class extends HTMLElement { static observedAttributes=['icon']; constructor(){super();this.attachShadow({mode:'open'});} connectedCallback(){this.draw();} attributeChangedCallback(){this.draw();} draw(){this.shadowRoot.innerHTML=`<style>:host{display:inline-flex;align-items:center;justify-content:center}svg{width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px)}</style><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${icons[this.getAttribute('icon')]||''}</svg>`;} });
+const roles={cover:['cover','Cancello'],position:['sensor','Posizione Cancello'],position_1:['sensor','Posizione Anta 1'],position_2:['sensor','Posizione Anta 2'],state_1:['sensor','Stato Anta 1'],state_2:['sensor','Stato Anta 2'],state_code_1:['sensor','Codice Stato Anta 1'],state_code_2:['sensor','Codice Stato Anta 2'],online:['binary_sensor','EDGE1 Collegata'],ft1:['binary_sensor','FT1 Oscurata'],ft2:['binary_sensor','FT2 Oscurata'],inputs_raw:['sensor','EDGE1 Ingressi Raw 0x1711'],last_result:['sensor','EDGE1 Ultimo Esito Comando'],parameter_80:['select','Parametro 80'],open_button:['button','Cancello Apri'],stop_button:['button','Cancello Stop'],close_button:['button','Cancello Chiudi'],pedestrian_button:['button','Cancello Pedonale']};
+const entityMap=Object.fromEntries(Object.entries(roles).map(([key,[domain]])=>[key,`${domain}.centralina_cancello_${key}`]));
+let registry=Object.entries(roles).map(([key,[domain,name]])=>({device_id:'demo_edge1',entity_id:entityMap[key],original_name:name,disabled_by:null}));
+const base={ cover:'closed', position:'0',position_1:'0',position_2:'0',state_code_1:'6',state_code_2:'6',state_1:'Chiusa',state_2:'Chiusa',online:'on',ft1:'off',ft2:'off',inputs_raw:'0',open_button:'unknown',stop_button:'unknown',close_button:'unknown',pedestrian_button:'unknown',last_result:'Nessun comando inviato',parameter_80:'0' };
+const scenarios={closed:{},opening:{cover:'opening',position:'43.5',position_1:'60',position_2:'27',state_code_1:'1',state_code_2:'1'},closing:{cover:'closing',position:'43.5',position_1:'60',position_2:'27',state_code_1:'3',state_code_2:'3'},opened:{cover:'open',position:'100',position_1:'100',position_2:'100',state_code_1:'5',state_code_2:'5'},pedestrian:{cover:'open',position:'20',position_1:'40',state_code_1:'2'},both:{ft1:'on',ft2:'on',inputs_raw:'48'},unknown:{position:'unknown',position_1:'unknown',position_2:'unknown',state_code_1:'9',state_code_2:'8'},offline:{online:'off',ft1:'unknown',ft2:'unknown'}};
+const callbacks=new Set();
+window.calls=[];window.registryCalls=0;window.rejectCalls=false;
+function makeHass(name,extra={}) { const values={...base,...scenarios[name],...extra}; return {connected:true,states:Object.fromEntries(Object.entries(values).map(([key,state])=>[entityMap[key],{state,attributes:{friendly_name:roles[key]?.[1]}}])),callWS:async()=>{window.registryCalls++;return registry;},connection:{subscribeEvents:async(cb)=>{callbacks.add(cb);return()=>callbacks.delete(cb);}},callService:async(domain,service,data)=>{window.calls.push({domain,service,data});document.querySelector('#event-log').textContent=`SIMULATO · ${domain}.${service} → ${data.entity_id}`;if(window.rejectCalls) throw new Error('simulated error'); if(window.holdOpen && data.entity_id===entityMap.open_button) await new Promise(resolve=>window.releaseOpen=resolve);}}; }
+window.card=document.querySelector('#main-card');
+window.applyScenario=(name,extra={})=>{window.card.hass=makeHass(name,extra);};
+window.setCardConfig=(extra={})=>window.card.setConfig({type:'custom:roger-edge1-card',device_id:'demo_edge1',settings_action:false,...extra});
+window.renameOpen=()=>{const id='button.id_rinominato';registry=registry.map(e=>e.entity_id===entityMap.open_button?{...e,entity_id:id}:e);entityMap.open_button=id;window.applyScenario('closed');callbacks.forEach(cb=>cb());};
+window.setCardConfig();window.applyScenario('closed');
+for(const [id,scenario] of [['partial-card','pedestrian'],['ft-card','both']]){const c=document.getElementById(id);c.setConfig({type:'custom:roger-edge1-card',device_id:'demo_edge1',settings_action:false});c.hass=makeHass(scenario);}
+document.querySelector('#scenario').addEventListener('change',e=>window.applyScenario(e.target.value));
+document.querySelector('#theme').addEventListener('click',()=>{const light=document.body.classList.toggle('light');document.querySelector('#theme').textContent=light?'Tema scuro':'Tema chiaro';});
+</script></body></html>

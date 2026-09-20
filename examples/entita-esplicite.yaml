@@ -1,0 +1,25 @@
+# ESEMPIO: gli ID qui sotto seguono la convenzione desiderata, ma vanno
+# sostituiti con quelli realmente presenti nella tua installazione.
+# Usa centralina-cancello.yaml per il riconoscimento automatico.
+type: custom:roger-edge1-card
+device_id: INSERISCI_ID_DISPOSITIVO
+motor1_side: left
+entities:
+  cover: cover.centralina_cancello_cancello
+  position: sensor.centralina_cancello_posizione_cancello
+  position_1: sensor.centralina_cancello_posizione_anta_1
+  position_2: sensor.centralina_cancello_posizione_anta_2
+  state_1: sensor.centralina_cancello_stato_anta_1
+  state_2: sensor.centralina_cancello_stato_anta_2
+  state_code_1: sensor.centralina_cancello_codice_stato_anta_1
+  state_code_2: sensor.centralina_cancello_codice_stato_anta_2
+  online: binary_sensor.centralina_cancello_edge1_collegata
+  ft1: binary_sensor.centralina_cancello_ft1_oscurata
+  ft2: binary_sensor.centralina_cancello_ft2_oscurata
+  inputs_raw: sensor.centralina_cancello_edge1_ingressi_raw_0x1711
+  last_result: sensor.centralina_cancello_edge1_ultimo_esito_comando
+  parameter_80: select.centralina_cancello_parametro_80
+  open_button: button.centralina_cancello_apri
+  stop_button: button.centralina_cancello_stop
+  close_button: button.centralina_cancello_chiudi
+  pedestrian_button: button.centralina_cancello_pedonale

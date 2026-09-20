@@ -1,0 +1,35 @@
+{
+  "name": "roger-edge1-card",
+  "version": "1.0.0",
+  "description": "Card Home Assistant per Roger EDGE1: due ante animate, comandi del cancello e fotocellule FT1/FT2.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "tsx --test tests/*.test.ts",
+    "test:browser": "playwright test"
+  },
+  "dependencies": {
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "license": "MIT",
+  "author": "branda92",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/branda92/roger-edge1-card.git"
+  },
+  "homepage": "https://github.com/branda92/roger-edge1-card#readme",
+  "bugs": {
+    "url": "https://github.com/branda92/roger-edge1-card/issues"
+  }
+}

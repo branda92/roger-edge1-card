@@ -1,0 +1,2 @@
+# Bundle generato: gli spazi nei template literal di Lit sono significativi.
+dist/*.js linguist-generated=true -whitespace
