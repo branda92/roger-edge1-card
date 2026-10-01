@@ -1,5 +1,13 @@
 # Registro delle modifiche
 
+## 1.2.0 — 1 ottobre 2026
+
+- Illuminazione facoltativa sotto il cappello delle colonne, con colore e intensità dalle entità light di Home Assistant.
+- Comando unico per colonne specchiate oppure luci separate, pannello nativo della luce e selettore opzionale dei preset WLED.
+- Supporto al master WLED con segmento separato per la lettura del colore, senza cambiare le configurazioni WLED.
+- Stati spento/non disponibile, gestione errori e richieste pendenti indipendenti dai comandi del cancello.
+- Test della logica, dei servizi HA, dei preset, delle tre viste e del layout mobile.
+
 ## 1.1.0 — 20 settembre 2026
 
 - Riconoscimento opzionale della posizione pedonale configurata: il riepilogo mostra la percentuale della sola anta pedonale quando le ante sono ferme nella posizione prevista.

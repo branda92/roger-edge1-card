@@ -1,12 +1,16 @@
 /** Roger EDGE1 Card — adapted from CB19 ESPHome Card (MIT), Zoltán Szőke. */
 import { LitElement, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { live } from "lit/directives/live.js";
 import { cardStyles } from "./styles";
 import type { CardUiConfig, ControlName, EntityKey, EntityMap, GateStatus, HomeAssistant, RegistryEntry, RogerEdge1CardConfig } from "./types";
 import { discoverEntities, validateConfig } from "./utils/entities";
 import { computeAvailableActions, computeGateStatus } from "./utils/state";
 import { renderGateSvg } from "./gate-svg";
 import { resolveUiConfig } from "./utils/ui-config";
+import { columnLights, lightControlAvailable, readColumnLight } from "./utils/lights";
+
+let nextCardId = 0;
 
 const BUTTON_KEYS: Record<ControlName, EntityKey> = { open: "open_button", stop: "stop_button", close: "close_button", pedestrian: "pedestrian_button" };
 const LABELS: Record<ControlName, string> = { open: "Apri", stop: "Stop", close: "Chiudi", pedestrian: "Pedonale" };
@@ -20,6 +24,8 @@ export class RogerEdge1Card extends LitElement {
   @state() private _discoveryMessage = "";
   @state() private _loading = false;
   @state() private _pending = new Set<ControlName>();
+  @state() private _lightPending = new Set<string>();
+  private readonly _artId = `roger-light-${++nextCardId}`;
   private _ui: CardUiConfig = resolveUiConfig({ type: "custom:roger-edge1-card" });
   private _generation = 0;
   private _loadRequested = true;
@@ -129,6 +135,62 @@ export class RogerEdge1Card extends LitElement {
       this._message = "Indica device_id o settings_path per aprire il dispositivo.";
     }
   }
+  private _lightMoreInfo(entity: string) {
+    this.dispatchEvent(new CustomEvent("hass-more-info", { bubbles: true, composed: true, detail: { entityId: entity } }));
+  }
+  private async _lightService(entity: string, domain: "light" | "select", service: string, data: Record<string, unknown> = {}) {
+    if (!this.hass || this.hass.connected === false || this._lightPending.has(entity)) return;
+    this._lightPending = new Set([...this._lightPending, entity]);
+    this._message = "";
+    try { await this.hass.callService(domain, service, { ...data, entity_id: entity }); }
+    catch { this._message = "Comando luci non riuscito. Controlla la connessione a WLED."; }
+    finally { const pending = new Set(this._lightPending); pending.delete(entity); this._lightPending = pending; }
+  }
+  private _toggleLight(entity: string) {
+    if (!lightControlAvailable(this.hass, entity)) return;
+    void this._lightService(entity, "light", this.hass!.states[entity].state === "on" ? "turn_off" : "turn_on");
+  }
+  private _selectPreset(entity: string, event: Event) {
+    const control = event.target as HTMLSelectElement;
+    const option = control.value;
+    const source = this.hass?.states[entity];
+    // The displayed selection follows HA even when a service call fails or is delayed.
+    control.value = source?.state ?? "";
+    if (!source || source.state === "unavailable" || !Array.isArray(source.attributes.options) || !source.attributes.options.includes(option)) return;
+    void this._lightService(entity, "select", "select_option", { option });
+  }
+  private _lightControls() {
+    const config = this._config?.column_lights;
+    if (!config || config.show_controls === false) return nothing;
+    const shared = config.entity || (config.left && config.left === config.right ? config.left : undefined);
+    const entries = shared ? [[shared, "Luci colonne"]] : [[config.left, "Colonna sinistra"], [config.right, "Colonna destra"]].filter(([id]) => !!id);
+    const preset = config.preset_entity ? this.hass?.states[config.preset_entity] : undefined;
+    const options: string[] = Array.isArray(preset?.attributes.options) ? preset.attributes.options.filter((v: unknown) => typeof v === "string") : [];
+    const presetAvailable = this.hass?.connected !== false && !!preset && preset.state !== "unavailable" && options.length > 0;
+    return html`<div class="column-lights-controls" aria-label="Illuminazione colonne">
+      ${entries.map(([id, label]) => {
+        const entity = id!;
+        const state = readColumnLight(this.hass, entity);
+        const available = lightControlAvailable(this.hass, entity);
+        return html`<div class="column-light-control" data-entity=${entity}>
+          <button class="light-details" aria-label=${`Regola ${label}`} @click=${() => this._lightMoreInfo(entity)}>
+            <span class=${`light-dot ${state.state}`} style=${`--light-color:${readColumnLight(this.hass, entity, config.color_entity).color}`}></span>
+            <span><strong>${label}</strong><small>${state.state === "on" ? `Accese · ${Math.round(state.brightness * 100)}%` : state.state === "off" ? "Spente" : "Non disponibili"}</small></span>
+          </button>
+          <button class="light-toggle" aria-label=${`${state.state === "on" ? "Spegni" : "Accendi"} ${label}`} aria-busy=${this._lightPending.has(entity)}
+            ?disabled=${!available || this._lightPending.has(entity)} @click=${() => this._toggleLight(entity)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v9M7 5.5a8 8 0 1 0 10 0"/></svg>
+          </button>
+        </div>`;
+      })}
+      ${config.preset_entity ? html`<label class="light-preset">Preset WLED<select aria-label="Preset WLED"
+        ?disabled=${!presetAvailable || this._lightPending.has(config.preset_entity)}
+        @change=${(e: Event) => this._selectPreset(config.preset_entity!, e)}>
+        <option value="" .selected=${live(!presetAvailable || !options.includes(preset?.state ?? ""))} disabled>${presetAvailable ? "Scegli un preset" : "Non disponibile"}</option>
+        ${options.map(option => html`<option value=${option} .selected=${live(!!presetAvailable && preset?.state === option)}>${option}</option>`)}
+      </select></label>` : nothing}
+    </div>`;
+  }
   private _settingsButton(where: "header" | "graphic") {
     const target = this._ui.header.settings_button_position;
     if (!this._ui.settings_button.enabled || this._config?.settings_action === false || target === "none") return nothing;
@@ -214,7 +276,7 @@ export class RogerEdge1Card extends LitElement {
         ${ui.header.show_state || ui.header.show_position ? html`<div class="header-meta">${ui.header.show_state ? status.label : ""}${ui.header.show_state && ui.header.show_position ? " · " : ""}${ui.header.show_position ? this._percent(status.displayPosition) : ""}</div>` : nothing}
       </div>${this._settingsButton("header")}</div>` : nothing}
       ${ui.view_mode === "text" ? html`<div class="text-panel"><div class="text-panel-main">${status.label} · ${this._percent(status.displayPosition)}</div>${this._settingsButton("graphic")}</div>` : html`
-        <div class="visual-box">${renderGateSvg(status, this._config.motor1_side ?? "left")}
+        <div class="visual-box">${renderGateSvg(status, this._config.motor1_side ?? "left", columnLights(this.hass, this._config.column_lights), this._artId)}
           ${ftWarning ? html`<div class="overlay-badges"><div class="flag warn">${this._photocellIcon()}${ftWarning}</div></div>` : nothing}
           ${this._settingsButton("graphic")}
         </div>
@@ -222,6 +284,7 @@ export class RogerEdge1Card extends LitElement {
       ${ui.view_mode !== "graphic" ? this._leafDetails(status) : nothing}
       ${this._photocells(status)}
       ${this._controls(status)}
+      ${this._lightControls()}
       ${this._message ? html`<div class="notice error" role="alert">${this._message}</div>` : nothing}
       ${this._configurationNotice()}
       ${this._config.show_debug ? html`<details class="debug-box"><summary>Diagnostica e associazioni</summary><div>Ultimo esito: ${status.lastResult || "—"}</div>${Object.entries(this._entities).map(([key, id]) => html`<div><strong>${key}:</strong> ${id}</div>`)}</details>` : nothing}

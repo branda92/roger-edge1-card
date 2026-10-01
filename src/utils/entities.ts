@@ -1,4 +1,5 @@
 import type { EntityKey, EntityMap, RegistryEntry, RogerEdge1CardConfig } from "../types";
+import { validateColumnLights } from "./lights";
 
 export const ENTITY_DEFINITIONS: Record<EntityKey, { domain: string; names: string[] }> = {
   cover: { domain: "cover", names: ["Cancello"] },
@@ -28,6 +29,7 @@ export function validateConfig(config: RogerEdge1CardConfig): void {
     throw new Error("Indica device_id oppure la mappa entities della centralina.");
   }
   if (config.device_id && !/^[a-zA-Z0-9_-]+$/.test(config.device_id)) throw new Error("device_id non valido.");
+  validateColumnLights(config.column_lights);
   if (config.motor1_side && !["left", "right"].includes(config.motor1_side)) throw new Error("motor1_side: usa left o right.");
   if (config.ui?.view_mode && !["graphic", "text", "hybrid"].includes(config.ui.view_mode)) throw new Error("ui.view_mode: usa graphic, text o hybrid.");
   const pedestrian = config.pedestrian_position;

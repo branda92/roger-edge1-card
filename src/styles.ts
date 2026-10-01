@@ -361,6 +361,22 @@ export const cardStyles = css`
   button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
   .notice { font-size: 12px; line-height: 1.5; color: var(--secondary-text-color); overflow-wrap: anywhere; padding-top: 6px; }
   .notice.error { color: var(--error-color, #ef5350); }
+  .column-lights-controls { display: grid; gap: 6px; border-top: 1px solid var(--divider-color, #8883); padding-top: 8px; margin-top: 2px; }
+  .column-light-control { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .light-details, .light-toggle { color: var(--primary-text-color); background: var(--secondary-background-color); border: 0; border-radius: 9px; cursor: pointer; font: inherit; min-height: 42px; }
+  .light-details { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0; padding: 8px 10px; text-align: left; }
+  .light-details > span:last-child { min-width: 0; }
+  .light-details strong, .light-details small { display: block; overflow-wrap: anywhere; }
+  .light-details strong { font-size: 12px; font-weight: 500; }
+  .light-details small { font-size: 11px; color: var(--secondary-text-color); margin-top: 2px; }
+  .light-dot { width: 10px; height: 10px; flex-shrink: 0; border: 1px solid var(--secondary-text-color); border-radius: 50%; }
+  .light-dot.on { background: var(--light-color); border-color: var(--light-color); box-shadow: 0 0 8px color-mix(in srgb, var(--light-color) 40%, transparent); }
+  .light-dot.unavailable { border-style: dashed; }
+  .light-toggle { display: grid; place-items: center; width: 42px; flex-shrink: 0; }
+  .light-toggle svg { width: 20px; height: 20px; }
+  .light-toggle:disabled { opacity: .35; cursor: not-allowed; }
+  .light-preset { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; color: var(--secondary-text-color); font-size: 11px; }
+  .light-preset select { width: 100%; min-width: 0; min-height: 38px; border: 1px solid var(--divider-color, #8884); border-radius: 8px; background: var(--card-background-color); color: var(--primary-text-color); padding: 6px; font: inherit; }
   .retry { font: inherit; color: var(--primary-color); border: 0; background: none; cursor: pointer; min-height: 36px; }
   details summary { cursor: pointer; padding: 4px 0; }
   @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,18 @@
+# Sostituisci gli ID con quelli del tuo dispositivo e delle tue entità Home Assistant.
+type: custom:roger-edge1-card
+device_id: INSERISCI_ID_DISPOSITIVO
+motor1_side: left
+ui:
+  view_mode: hybrid
+
+column_lights:
+  entity: light.luci_colonne
+  # Opzionali: segmento da cui leggere il colore e selettore dei preset WLED.
+  # color_entity: light.segmento_colonna_sinistra
+  # preset_entity: select.luci_colonne_preset
+
+# Facoltativo: adatta al tuo cancello oppure rimuovi questo blocco.
+pedestrian_position:
+  motor: 1
+  position: 40
+  tolerance: 1

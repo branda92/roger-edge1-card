@@ -1,4 +1,4 @@
-# Roger EDGE1 Card 1.1.0
+# Roger EDGE1 Card 1.2.0
 
 Card per Home Assistant dedicata alle centraline **Roger Technology EDGE1** e al componente ESPHome [esphome-roger-edge1](https://github.com/branda92/esphome-roger-edge1) v0.3.0. Derivata da [CB19 ESPHome Card di Zoltán Szőke](https://github.com/szokezoltan95/CB19-esphome-card), licenza MIT; riferimento `0e4505aa464b7efa0c71c459b80dbd4bb4f23415`.
 
@@ -6,9 +6,9 @@ La grafica a due ante e le opzioni di stile provengono dal progetto originale. L
 
 ## Anteprima
 
-![Card con entrambe le fotocellule oscurate](preview/card-ft1-ft2.png)
+![Card con illuminazione WLED delle colonne](preview/colonne-wled-blu.png)
 
-Le anteprime della versione 1.1.0 usano dati simulati. Vedi anche la [posizione pedonale al 40%](preview/card-parziale.png).
+Anteprima 1.2.0 con dati simulati. Vedi anche [luce bianca](preview/colonne-wled.png), [posizione pedonale](preview/card-parziale.png) e [fotocellule oscurate](preview/card-ft1-ft2.png); le ultime due immagini documentano la versione 1.1.0.
 
 ## Installazione con HACS
 
@@ -25,7 +25,7 @@ Riferimenti ufficiali: [repository personalizzati HACS](https://hacs.xyz/docs/fa
 
 1. Scarica **`roger-edge1-card.js`** dalla [release](https://github.com/branda92/roger-edge1-card/releases/latest), oppure usa [`dist/roger-edge1-card.js`](dist/roger-edge1-card.js), e copialo in **`/config/www/roger-edge1-card.js`** su Home Assistant. Il bundle include i testi delle licenze e le attribuzioni. Se crei `www` per la prima volta, riavvia Home Assistant.
 2. Apri **Impostazioni → Dashboard → ⋮ → Risorse** (attiva la modalità avanzata nel tuo profilo se necessario). Aggiungi:
-   - URL: `/local/roger-edge1-card.js?v=1.1.0`
+   - URL: `/local/roger-edge1-card.js?v=1.2.0`
    - Tipo: **Modulo JavaScript**.
 3. Ricarica la pagina o l'app Home Assistant.
 4. Modifica la dashboard, aggiungi una **card Manuale** e incolla il contenuto di [`examples/centralina-cancello.yaml`](examples/centralina-cancello.yaml).
@@ -49,7 +49,7 @@ La risorsa si registra anche in dashboard YAML con:
 ```yaml
 lovelace:
   resources:
-    - url: /local/roger-edge1-card.js?v=1.1.0
+    - url: /local/roger-edge1-card.js?v=1.2.0
       type: module
 ```
 
@@ -105,6 +105,53 @@ pedestrian_position:
 L’etichetta compare solo con la centralina collegata, posizioni note, anta pedonale ferma (aperta o arrestata) e altra anta indicata come chiusa. Durante il movimento o con dati sconosciuti rimangono gli stati ordinari. Anche un arresto manuale nella stessa posizione può corrispondere a «Posizione pedonale».
 
 In questa condizione il riepilogo mostra la percentuale **misurata dell’anta pedonale**, arrotondata come le altre percentuali; non forza una lettura diversa dal sensore. I dettagli delle due ante e il sensore complessivo di Home Assistant conservano i propri valori. Senza il blocco `pedestrian_position`, rimane il riepilogo complessivo precedente.
+
+## Illuminazione delle colonne e WLED
+
+Dalla versione 1.2.0 puoi collegare luci Home Assistant alla striscia sotto il cappello delle colonne. La funzione è facoltativa: senza `column_lights` la card mantiene l’aspetto precedente.
+
+Per una sola luce che comanda entrambe le colonne:
+
+```yaml
+column_lights:
+  entity: light.luci_colonne  # Sostituisci con la tua entità
+```
+
+Le due colonne mostrano lo stesso colore e la luminosità ricevuti da Home Assistant. Il pulsante di accensione invia un solo comando all’entità configurata. Tocca **Luci colonne** per aprire il pannello nativo della luce: luminosità, colore ed effetti sono disponibili secondo le funzioni esposte da quell’entità.
+
+### WLED con master e due segmenti specchiati
+
+Il master WLED può esporre solo accensione e luminosità generale. In questo caso usa il segmento di una colonna come sorgente del colore e il selettore dei preset per richiamare le configurazioni già salvate in WLED:
+
+```yaml
+column_lights:
+  entity: light.luci_colonne
+  color_entity: light.segmento_colonna_sinistra
+  preset_entity: select.luci_colonne_preset
+```
+
+Tutti gli ID dell’esempio vanno sostituiti con quelli della tua installazione.
+
+- `entity`: comanda entrambe le colonne e apre il dettaglio della luce master.
+- `color_entity`: opzionale, letto per rappresentare il colore delle colonne specchiate. La luminosità grafica combina quella del master e quella del segmento. Non viene usato come destinazione dei comandi.
+- `preset_entity`: opzionale, mostra le opzioni effettivamente esposte dal selettore WLED e invia `select.select_option` soltanto quando scegli un preset.
+- `show_controls: false`: nasconde i controlli delle luci e mantiene la rappresentazione sul cancello.
+
+Le impostazioni dei segmenti specchiati restano in WLED. Per cambiarne insieme colori ed effetti puoi usare i preset esistenti. La card non modifica la segmentazione, le automazioni o il firmware WLED. Se non viene fornito alcun colore, il disegno usa un bianco caldo indicativo. Un effetto WLED animato è rappresentato dal colore primario comunicato da Home Assistant: non è una replica in tempo reale dei singoli LED.
+
+Luce spenta e non disponibile sono distinguibili nei controlli; nessuna luce grafica rimane accesa se Home Assistant perde la connessione. I controlli WLED restano utilizzabili se è offline soltanto la centralina del cancello. Lo stato segue le letture di Home Assistant, anche dopo un comando; errori e richieste pendenti non bloccano Stop.
+
+Per colonne indipendenti usa `left` e `right` al posto di `entity`:
+
+```yaml
+column_lights:
+  left: light.colonna_sinistra
+  right: light.colonna_destra
+```
+
+I lati sono quelli del disegno e non cambiano con `motor1_side`. Se i due ID sono uguali, viene mostrato un solo comando. Anche la modalità `text` include i controlli luci, senza il disegno.
+
+Riferimenti: [integrazione WLED](https://www.home-assistant.io/integrations/wled/) e [entità light](https://www.home-assistant.io/integrations/light/) di Home Assistant. Esempio completo: [examples/colonne-wled.yaml](examples/colonne-wled.yaml).
 
 ## Aspetto
 

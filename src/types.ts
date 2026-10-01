@@ -10,6 +10,24 @@ export interface PedestrianPositionConfig {
   position: number;
   tolerance?: number;
 }
+export interface ColumnLightsConfig {
+  entity?: string;
+  left?: string;
+  right?: string;
+  color_entity?: string;
+  preset_entity?: string;
+  show_controls?: boolean;
+}
+export interface ColumnLightState {
+  entity: string;
+  state: "on" | "off" | "unavailable";
+  color: string;
+  brightness: number;
+}
+export interface ColumnLightsState {
+  left?: ColumnLightState;
+  right?: ColumnLightState;
+}
 export interface RogerEdge1CardConfig {
   type: string;
   device_id?: string;
@@ -20,6 +38,7 @@ export interface RogerEdge1CardConfig {
   settings_entity?: string;
   entities?: Partial<GateEntities>;
   pedestrian_position?: PedestrianPositionConfig;
+  column_lights?: ColumnLightsConfig;
   ui?: DeepPartial<CardUiConfig>;
 }
 export interface GateEntities {

@@ -1,6 +1,26 @@
-import { svg } from "lit";
+import { svg, nothing } from "lit";
+import type { ColumnLightState, ColumnLightsState } from "./types";
 
-export function renderGateArt(leftStyle: string, rightStyle: string) {
+function renderColumnLight(light: ColumnLightState | undefined, side: "left" | "right", prefix: string) {
+  if (!light) return nothing;
+  const x = side === "left" ? 421 : 18473.32;
+  const id = `${prefix}-${side}-wash`;
+  return svg`<g class="column-light" data-side=${side} data-state=${light.state}>
+    <defs><linearGradient id=${id} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color=${light.color} stop-opacity="0.85"/>
+      <stop offset="0.35" stop-color=${light.color} stop-opacity="0.32"/>
+      <stop offset="1" stop-color=${light.color} stop-opacity="0"/>
+    </linearGradient></defs>
+    <g class="column-light-glow" opacity=${light.brightness}>
+      <rect x=${x + 75} y="590" width="1473.1" height="4700" fill=${`url(#${id})`}/>
+      <rect x=${x - 110} y="476" width="1843.1" height="320" rx="150" fill=${light.color} opacity="0.28"/>
+    </g>
+    <rect class="column-light-strip" x=${x - 45} y="484" width="1713.1" height="115" rx="48"
+      fill=${light.state === "on" ? light.color : "#55585c"} opacity=${light.state === "on" ? Math.max(0.2, light.brightness) : 0.65}/>
+  </g>`;
+}
+
+export function renderGateArt(leftStyle: string, rightStyle: string, lights: ColumnLightsState = {}, prefix = "roger-light") {
 return svg`
 <svg
   xmlns="http://www.w3.org/2000/svg"
@@ -29,6 +49,7 @@ return svg`
             y="466.29"
             width="1623.1"
             height="6231.29"/>
+      ${renderColumnLight(lights.left, "left", prefix)}
       <rect id="left-post-cap"
             class="fil2 str1"
             x="74.49"
@@ -46,6 +67,7 @@ return svg`
             y="466.29"
             width="1623.1"
             height="6231.29"/>
+      ${renderColumnLight(lights.right, "right", prefix)}
       <rect id="right-post-cap"
             class="fil2 str1"
             x="18126.81"
